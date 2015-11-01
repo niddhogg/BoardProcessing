@@ -65,22 +65,24 @@ def process_board_picture(image_path, display_mode='show'):
     if img is None:
         print('Failed to load image file:', image_path)
 
+
+
     # array of inputed coordinates
     pts = []
 
     def onmouse(event, x, y, flags, param):
         if event == cv2.EVENT_LBUTTONUP:
             if (len(pts) < 4):
-                cv2.circle(img,(x,y),8,(255,0,0),-1)
+                cv2.circle(img,(x,y),3,(255,0,0),-1)
                 pts.append((x,y))
 
                 if len(pts) == 2:
-                    cv2.line(img,pts[0],pts[1],(0,255,0),4)
+                    cv2.line(img,pts[0],pts[1],(0,255,0),2)
                 elif len(pts) == 3:
-                    cv2.line(img,pts[1],pts[2],(0,255,0),4)
+                    cv2.line(img,pts[1],pts[2],(0,255,0),2)
                 elif len(pts) == 4:
-                    cv2.line(img,pts[2],pts[3],(0,255,0),4)
-                    cv2.line(img,pts[3],pts[0],(0,255,0),4)
+                    cv2.line(img,pts[2],pts[3],(0,255,0),2)
+                    cv2.line(img,pts[3],pts[0],(0,255,0),2)
 
 
 
@@ -96,21 +98,31 @@ def process_board_picture(image_path, display_mode='show'):
 
     cv2.destroyAllWindows()
 
-    print(pts)
+    # do transform
+    pts2 = np.array(pts, dtype="float32")
+    original = cv2.imread(image_path)
 
-# pts2 = np.array(eval("[(73, 239), (356, 117), (475, 265), (187, 443)]"), dtype = "float32")
-    pts2 =  [list( e) for e in pts]
+    # get warped image
+    warped = four_point_transform(original, pts2)
 
-    print(pts2)
+    # resize warped image
+    size = 400
+    resized_warped = cv2.resize(warped, (size, size))
 
-    warped = four_point_transform(img, pts2)
-    cv2.imshow("Warped", warped)
+    # now let's draw the lines for debug
+    for i in range(1,8):
+        num = i * (size/8)
+        cv2.line(resized_warped,(0,num),(size,num),(0,255,0),2)
+        cv2.line(resized_warped,(num,0),(num,size),(0,255,0),2)
+
+    cv2.imshow("Original",original )
+    cv2.imshow("Warped", resized_warped)
+
+
+
     cv2.waitKey(0)
 
 
 
-    # cv2.waitKey(50000)
-
-
 if __name__ == '__main__':
-    process_board_picture('/Users/niddhogg/Documents/board_processing/BoardProcessing/board_processing/c7.jpg')
+    process_board_picture('/Users/niddhogg/Documents/board_processing/BoardProcessing/board_processing/c4.jpg')
