@@ -7,9 +7,9 @@ https://www.continuum.io/downloads
 
 Install OpenCV, numpy, scipy:
 
-run in terminal 
+run in terminal
 
-'conda install opencv'
+'conda install opencv docopt numpt scipy'
 
 
 Steps to check if everything is done correctly:
@@ -33,8 +33,3 @@ In terminal, run
 'cd /path/to/src'
 
 'python process_board_picture.py'
-
-
-
-
-
