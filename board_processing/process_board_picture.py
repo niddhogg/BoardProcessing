@@ -76,7 +76,7 @@ def process_board_picture(image_path, display_mode='show'):
 
     # Load current state image
     # img2 = cv2.imread("/Users/niddhogg/Documents/board_processing/BoardProcessing/board_processing/test_images/IMG_3485.jpg")
-    img2 = cv2.imread("test_images/IMG_3485.jpg")
+    # img2 = cv2.imread("test_images/test_1.jpg")
 
 
 
@@ -114,48 +114,35 @@ def process_board_picture(image_path, display_mode='show'):
 #    cv2.destroyAllWindows()
 
     # test only
-    pts = [(116, 334), (346, 334), (385, 577), (59, 577)]
-
+#    pts = [(116, 334), (346, 334), (385, 577), (59, 577)]
+    pts = [(108, 30), (418, 32), (427, 349), (91, 346)]
 
     # do transform
     pts2 = np.array(pts, dtype="float32")
     original = cv2.imread(image_path)
 
     # get warped image
-    warped_ref = four_point_transform(original, pts2)
-    warped_now = four_point_transform(img2, pts2)
+    warped = four_point_transform(original, pts2)
 
     # resize warped image
     size = 400
-    warped_ref_resized = cv2.resize(warped_ref, (size, size))
-    warped_now_resized = cv2.resize(warped_now, (size, size))
+    warped_resized = cv2.resize(warped, (size, size))
 
 
-# print(pts)
+
+    print(pts)
 
     # processing part
 
-    img_ref = cv2.cvtColor(warped_ref_resized, cv2.COLOR_BGR2GRAY)
-    img_now = cv2.cvtColor(warped_now_resized, cv2.COLOR_BGR2GRAY)
-
-# cv2.imshow("Reference",img_ref )
-# cv2.imshow("Now",img_now )
-
-    # show diff
-    img_dif = cv2.absdiff(img_ref,img_now)
-    ret,img_dif = cv2.threshold(img_dif,15,255,cv2.THRESH_TOZERO)
-# cv2.imshow("Diff", img_dif )
-
-    img_dif_copy = cv2.cvtColor(img_dif,cv2.COLOR_GRAY2RGB)
+    warped_resized_copy = warped_resized.copy()
     # now let's draw the lines for debug
     for i in range(1,8):
         num = i * (size/8)
-        cv2.line(img_dif_copy,(0,num),(size,num),(0,255,0),1)
-        cv2.line(img_dif_copy,(num,0),(num,size),(0,255,0),1)
+        cv2.line(warped_resized_copy,(0,num),(size,num),(0,255,0),1)
+        cv2.line(warped_resized_copy,(num,0),(num,size),(0,255,0),1)
 
     cv2.imshow("Original",original )
-    cv2.imshow("Dif", img_dif_copy)
-
+    cv2.imshow("Warped ", warped_resized_copy)
 
 
     img_board = []
@@ -168,23 +155,55 @@ def process_board_picture(image_path, display_mode='show'):
             end_x = (i+1)*(size/8)
             end_y = (j+1)*(size/8)
 
-            sqr_img = img_dif[start_x:end_x, start_y:end_y].copy()
-            # ret,thresh = cv2.threshold(sqr_img,70,255,cv2.THRESH_TOZERO)
-            img_board.append(sqr_img)
+            sqr_img = warped_resized[start_x:end_x, start_y:end_y].copy()
+            img_board.append( (sqr_img,i,j) )
 
-            # cv2.imshow("th" + str(i) + " " + str(j), thresh )
+    # ok, got 64 images, now let's process them
 
-# THRESH_BINARY
+    # here we form up matrix
+    Matrix = [[0 for x in range(8)] for x in range(8)]
 
-# print(img_board)
+    for (sqr_img,img_i,img_j) in img_board:
+        size_sqr = size / 8
+        start = size_sqr / 3
+        end = size_sqr - start
+        sqr_img_center = sqr_img[start:end, start:end].copy()
+        
+        # output
+        # print(sum(sum(sqr_img_center))[2])
+        
+        sum_r = 0
+        sum_b = 0
+        
+        for i in range(start, end):
+            for j in range(start, end):
+                pixel_value = sqr_img[i][j]
+                b = pixel_value[0]
+                g = pixel_value[1]
+                r = pixel_value[2]
+                
+                if (r > 220) & ( b < 50) & ( g < 50):
+                    sum_r = sum_r + r
+                
+                if (b > 220) & ( r < 50):
+                    sum_b = sum_b + b
 
-#ret,th1 = cv2.threshold(img_dif,127,255,cv2.THRESH_TOZERO)
-#cv2.imshow("th1", th1 )
+
+        if (sum_r > 10000):
+            Matrix[img_i][img_j] = 1
+            # cv2.imshow("Red", sqr_img_center )
+            # cv2.waitKey(0)
 
 
-    for sqr_img in img_board:
-        print(sum(sum(sqr_img)))
+        if (sum_b > 10000):
+            Matrix[img_i][img_j] = 2
+            # cv2.imshow("Blue",sqr_img_center )
+            # cv2.waitKey(0)
 
+
+    # print(Matrix)
+    print('\n'.join([''.join(['{:4}'.format(item) for item in row])
+        for row in Matrix]))
 
 
     cv2.waitKey(0)
@@ -196,6 +215,6 @@ if __name__ == '__main__':
     image = arguments['<image>']
 
     if image is None:
-        image = 'test_images/IMG_3472.jpg'
+        image = 'test_images/test_1.jpg'
 
     process_board_picture(image)
