@@ -1,53 +1,37 @@
-"""
-Author: Bogdan Kulynych (hello@bogdankulynych.me)
-"""
-
-import math
-import numpy as np
 import cv2
 
-from aset import ApproximateSet
+# Camera 0 is the integrated web cam on my netbook
+camera_port = 1
+
+#Number of frames to throw away while the camera adjusts to light levels
+ramp_frames = 0
+
+# Now we can initialize the camera capture object with the cv2.VideoCapture class.
+# All it needs is the index to a camera port.
+camera = cv2.VideoCapture(camera_port)
+
+# Captures a single image from the camera and returns it in PIL format
+def get_image():
+    # read is the easiest way to get a full image out of a VideoCapture object.
+    retval, im = camera.read()
+    return im
+
+# Ramp the camera - these frames will be discarded and are only used to allow v4l2
+# to adjust light levels, if necessary
+for i in xrange(ramp_frames):
+    temp = get_image()
+print("Taking image...")
+# Take the actual image we want to keep
+camera_capture = get_image()
+file = "/captured/test_image.png"
+# A nice feature of the imwrite method is that it will automatically choose the
+# correct format based on the file extension you provide. Convenient!
+# cv2.imwrite(file, camera_capture)
+cv2.imshow("img", camera_capture)
+
+# You'll want to release the camera, otherwise you won't be able to create a new
+# capture object until your script exits
+del(camera)
 
 
-def process_board_picture(image_path, display_mode='show'):
-    # Pick display mode
-    assert display_mode in ['show', 'write']
-    if display_mode == 'show':
-        display_fn = cv2.imshow
-    elif display_mode == 'write':
-        display_fn = cv2.imwrite
-
-    # Load image
-    src = cv2.imread(image_path)
-    img = src
-    img = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-
-    template = cv2.imread('pat1.jpg',0)
-    w, h = template.shape[::-1]
-    
-    method = cv2.TM_CCOEFF
-    res = cv2.matchTemplate(img,template,method)
-
-    min_val, max_val, min_loc, max_loc = cv2.minMaxLoc(res)
-    top_left = max_loc
-
-    bottom_right = (top_left[0] + w, top_left[1] + h)
-    cv2.rectangle(img,top_left, bottom_right, 255, 2)
-
-
-
-
-
-
-    display_fn('lines_' + image_path, img)
-    
-
-
-
-
-
-    cv2.waitKey(50000)
-
-
-if __name__ == '__main__':
-    process_board_picture('t1.jpg')
+cv2.waitKey(0)
